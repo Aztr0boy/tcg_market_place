@@ -7,14 +7,11 @@ import 'screens/market_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/notification_screen.dart';
 
-// 🌙 1. วางตัวแปรควบคุม Theme ไว้บนสุด (นอก Class) เพื่อให้เรียกใช้ได้จากทุกหน้า
-final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   await Supabase.initialize(
-    url: 'https://mnwtomjiwlslhqfrdvpq.supabase.co',
+    url: 'https://mnwtomjiwlslhqfrdvpq.supabase.co', 
     anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ud3RvbWppd2xzbGhxZnJkdnBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3NzA4MjEsImV4cCI6MjA5MjM0NjgyMX0.hrtu48xCfFAXJUDMgCPD4o0JgVxp1cY1N1SHRus1Kqk',
   );
 
@@ -26,42 +23,35 @@ class TcgMarketApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🌙 2. ใช้ ValueListenableBuilder หุ้ม MaterialApp เพื่อให้แอปเปลี่ยนสีทันทีที่กดสวิตช์
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: themeNotifier,
-      builder: (_, ThemeMode currentMode, __) {
-        return MaterialApp(
-          title: 'TCG Market',
-          debugShowCheckedModeBanner: false,
-          
-          // ☀️ ค่า Theme โหมดปกติ
-          theme: ThemeData(
-            useMaterial3: true,
-            brightness: Brightness.light,
-            primarySwatch: Colors.blue,
-            scaffoldBackgroundColor: Colors.grey[100],
-          ),
-
-          // 🌑 ค่า Theme โหมดกลางคืน
-          darkTheme: ThemeData(
-            useMaterial3: true,
-            brightness: Brightness.dark,
-            primarySwatch: Colors.blue,
-            scaffoldBackgroundColor: const Color(0xFF121212), // สีเทาเข้มแบบสบายตา
-          ),
-
-          // 💡 กำหนดว่าจะใช้โหมดไหนตามค่าใน themeNotifier
-          themeMode: currentMode,
-
-          home: Supabase.instance.client.auth.currentUser == null 
-              ? const LoginScreen() 
-              : const MainLayout(),
-        );
-      },
+    return MaterialApp(
+      title: 'TCG Market',
+      debugShowCheckedModeBanner: false,
+      // 🔥 บังคับเป็นธีมมืดตรงนี้เลย
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark, // 👈 หัวใจสำคัญ
+        primarySwatch: Colors.blue,
+        // ใช้สีเทาเข้ม (0xFF121212) จะดูแพงกว่าสีดำสนิท (0xFF000000)
+        scaffoldBackgroundColor: const Color(0xFF121212), 
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E1E), // สีแถบบน
+          foregroundColor: Colors.white,
+        ),
+        cardColor: const Color(0xFF1E1E1E), // สีของการ์ดต่างๆ
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Color(0xFF1E1E1E),
+          selectedItemColor: Colors.orange, // สีปุ่มที่เลือก (เด่นๆ)
+          unselectedItemColor: Colors.grey,
+        ),
+      ),
+      home: Supabase.instance.client.auth.currentUser == null 
+          ? const LoginScreen() 
+          : const MainLayout(),
     );
   }
 }
 
+// ... (โค้ด MainLayout ส่วนที่เหลือเหมือนเดิม ไม่ต้องเปลี่ยนครับ) ...
 class MainLayout extends StatefulWidget {
   const MainLayout({Key? key}) : super(key: key);
 
@@ -83,7 +73,9 @@ class _MainLayoutState extends State<MainLayout> {
   @override
   void initState() {
     super.initState();
-    _listenForNotifications();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _listenForNotifications();
+    });
   }
 
   void _listenForNotifications() {
@@ -91,10 +83,11 @@ class _MainLayoutState extends State<MainLayout> {
     if (userId == null) return;
 
     _supabase.from('notifications').stream(primaryKey: ['id']).eq('user_id', userId).listen((data) {
-      if (data.isNotEmpty) {
+      if (data.isNotEmpty && mounted) {
         final latestNotif = data.last;
         final createdAt = DateTime.parse(latestNotif['created_at']);
         if (DateTime.now().difference(createdAt).inMinutes < 1 && latestNotif['is_read'] == false) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               behavior: SnackBarBehavior.floating,
