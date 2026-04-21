@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:path/path.dart' as p;
 
 class AddListingScreen extends StatefulWidget {
   const AddListingScreen({Key? key}) : super(key: key);
@@ -10,34 +13,171 @@ class AddListingScreen extends StatefulWidget {
 
 class _AddListingScreenState extends State<AddListingScreen> {
   final _priceController = TextEditingController();
-  final _supabase = Supabase.instance.client;
+  final _descriptionController = TextEditingController();
+  String _selectedCondition = 'Near Mint'; // ค่าเริ่มต้น
+  File? _imageFile;
+  bool _isLoading = false;
 
+  final List<String> _conditions = ['Mint', 'Near Mint', 'Excellent', 'Played', 'Poor'];
+
+  // ฟังก์ชันเลือกรูปจากแกลเลอรี
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  // ฟังก์ชันอัปโหลดรูปและบันทึกข้อมูลลง Database
   Future<void> _submitListing() async {
-    // ต้องมี card_id จริงๆ ในระบบก่อนลงขาย (อันนี้ใส่ Hardcode จำลอง)
-    final mockCardId = 'YOUR_CARD_UUID_HERE'; 
-    await _supabase.from('marketplace_listings').insert({
-      'seller_id': _supabase.auth.currentUser!.id,
-      'card_id': mockCardId,
-      'price_thb': int.parse(_priceController.text),
-      'condition': 'Mint',
-    });
-    Navigator.pop(context);
+    // ตรวจสอบความครบถ้วนของข้อมูล
+    if (_imageFile == null || _priceController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('กรุณาเลือกรูปภาพและระบุราคา')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final supabase = Supabase.instance.client;
+    final userId = supabase.auth.currentUser!.id;
+
+    try {
+      // 1. อัปโหลดรูปไปที่ Bucket 'card-images' ที่คุณเพิ่งสร้าง
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}${p.extension(_imageFile!.path)}';
+      final imagePath = 'public/$fileName';
+
+      await supabase.storage.from('card-images').upload(
+        imagePath,
+        _imageFile!,
+      );
+
+      // 2. ดึง Public URL ของรูปออกมา
+      final String imageUrl = supabase.storage.from('card-images').getPublicUrl(imagePath);
+
+      // 3. บันทึกข้อมูลทั้งหมดลงในตาราง marketplace_listings
+      await supabase.from('marketplace_listings').insert({
+        'seller_id': userId,
+        'price_thb': int.parse(_priceController.text),
+        'condition': _selectedCondition,
+        'description': _descriptionController.text,
+        'image_url': imageUrl,
+        'is_deleted': false,
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ลงขายการ์ดสำเร็จ!')));
+        Navigator.pop(context); // ปิดหน้านี้เมื่อเสร็จ
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('ลงขายการ์ด')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(controller: _priceController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'ราคา (บาท)')),
-            const SizedBox(height: 20),
-            ElevatedButton(onPressed: _submitListing, child: const Text('ลงขาย'))
-          ],
-        ),
-      ),
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator())
+        : SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ส่วนแสดงและเลือกรูป
+                Center(
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      height: 250,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[400]!),
+                      ),
+                      child: _imageFile != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.file(_imageFile!, fit: BoxFit.cover),
+                            )
+                          : const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
+                                Text('แตะเพื่อเพิ่มรูปการ์ด', style: TextStyle(color: Colors.grey)),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // กรอกราคา
+                const Text('ราคาที่ต้องการขาย (บาท)', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _priceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    hintText: 'เช่น 500',
+                    border: OutlineInputBorder(),
+                    prefixText: '฿ ',
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // เลือกสภาพการ์ด
+                const Text('สภาพการ์ด', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _selectedCondition,
+                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  items: _conditions.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() => _selectedCondition = newValue!);
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // รายละเอียด
+                const Text('รายละเอียดเพิ่มเติม', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'ระบุตำหนิ หรือข้อมูลเพิ่มเติม...',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // ปุ่มยืนยัน
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _submitListing,
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                    child: const Text('ลงประกาศขายเลย', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ),
     );
   }
 }
