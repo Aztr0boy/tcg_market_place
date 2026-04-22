@@ -1,0 +1,70 @@
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../main.dart'; // import เพื่อให้เรียกใช้ MainLayout ได้
+import 'login_screen.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({Key? key}) : super(key: key);
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthState();
+  }
+
+  Future<void> _checkAuthState() async {
+    // โชว์หน้าโลโก้ค้างไว้ 1.5 วินาที
+    await Future.delayed(const Duration(milliseconds: 1500));
+
+    // เช็คว่าผู้ใช้เคยล็อกอินค้างไว้หรือไม่
+    final session = Supabase.instance.client.auth.currentSession;
+    
+    if (mounted) {
+      if (session != null) {
+        // ถ้าเคยล็อกอินแล้ว -> พาไปหน้า MainLayout (มีแถบเมนูด้านล่าง)
+        Navigator.pushReplacement(
+          context, 
+          MaterialPageRoute(builder: (_) => const MainLayout())
+        );
+      } else {
+        // ถ้ายังไม่เคยล็อกอิน -> พาไปหน้า LoginScreen
+        Navigator.pushReplacement(
+          context, 
+          MaterialPageRoute(builder: (_) => const LoginScreen())
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212), // สีพื้นหลัง Dark Mode
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.style, size: 100, color: Colors.orange), // ไอคอนสีส้มให้เข้ากับธีม
+            SizedBox(height: 24),
+            Text(
+              'TCG MARKET',
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 2,
+              ),
+            ),
+            SizedBox(height: 40),
+            CircularProgressIndicator(color: Colors.orange), // วงกลมโหลดสีส้ม
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -8,16 +8,36 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final supabase = Supabase.instance.client;
+    final user = supabase.auth.currentUser;
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 180.0,
+            expandedHeight: 200.0,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              title: const Text('TCG Marketplace', 
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              // ปรับส่วน Title ให้แสดง Username แทนชื่อแอปเฉยๆ
+              title: FutureBuilder<Map<String, dynamic>?>(
+                future: supabase
+                    .from('profiles')
+                    .select()
+                    .eq('id', user?.id ?? '')
+                    .maybeSingle(),
+                builder: (context, snapshot) {
+                  String displayName = "TCG Marketplace";
+                  if (snapshot.hasData && snapshot.data != null) {
+                    displayName = "สวัสดี, ${snapshot.data!['username']}";
+                  }
+                  return Text(
+                    displayName,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        color: Colors.white,
+                        fontSize: 16),
+                  );
+                },
+              ),
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -26,12 +46,13 @@ class HomeScreen extends StatelessWidget {
                     end: Alignment.bottomRight,
                   ),
                 ),
-                child: Icon(Icons.style, size: 80, color: Colors.white.withOpacity(0.2)),
+                child: Icon(Icons.style,
+                    size: 80, color: Colors.white.withOpacity(0.2)),
               ),
             ),
           ),
 
-          // ✅ จุดที่เคย Error: ย้าย Padding มาหุ้ม Text แทนการใส่ใน SliverToBoxAdapter
+          // ส่วนแสดงสินค้ามาใหม่ล่าสุด
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -50,10 +71,17 @@ class HomeScreen extends StatelessWidget {
                 .order('created_at', ascending: false),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
+                return const SliverToBoxAdapter(
+                    child: Center(child: CircularProgressIndicator()));
               }
 
               final items = snapshot.data ?? [];
+
+              if (items.isEmpty) {
+                return const SliverToBoxAdapter(
+                  child: Center(child: Text('ยังไม่มีสินค้าลงขาย')),
+                );
+              }
 
               return SliverPadding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -72,7 +100,8 @@ class HomeScreen extends StatelessWidget {
                       return GestureDetector(
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => CardDetailScreen(item: item)),
+                          MaterialPageRoute(
+                              builder: (_) => CardDetailScreen(item: item)),
                         ),
                         child: Card(
                           clipBehavior: Clip.antiAlias,
@@ -86,14 +115,17 @@ class HomeScreen extends StatelessWidget {
                                     Image.network(
                                       item['image_url'] ?? '',
                                       fit: BoxFit.cover,
-                                      errorBuilder: (ctx, err, st) => const Icon(Icons.broken_image),
+                                      errorBuilder: (ctx, err, st) =>
+                                          const Icon(Icons.broken_image),
                                     ),
                                     if (isSold)
                                       Container(
                                         color: Colors.black54,
                                         child: const Center(
-                                          child: Text('SOLD OUT', 
-                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                          child: Text('SOLD OUT',
+                                              style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold)),
                                         ),
                                       ),
                                   ],
@@ -101,10 +133,12 @@ class HomeScreen extends StatelessWidget {
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Text('฿${item['price_thb']}', 
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold, 
-                                    color: isSold ? Colors.grey : Colors.green)),
+                                child: Text('฿${item['price_thb']}',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: isSold
+                                            ? Colors.grey
+                                            : Colors.green)),
                               ),
                             ],
                           ),

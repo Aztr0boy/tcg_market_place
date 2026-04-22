@@ -14,7 +14,7 @@ class AddListingScreen extends StatefulWidget {
 class _AddListingScreenState extends State<AddListingScreen> {
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
-  String _selectedCondition = 'Near Mint'; // ค่าเริ่มต้น
+  String _selectedCondition = 'Near Mint'; 
   File? _imageFile;
   bool _isLoading = false;
 
@@ -34,10 +34,16 @@ class _AddListingScreenState extends State<AddListingScreen> {
 
   // ฟังก์ชันอัปโหลดรูปและบันทึกข้อมูลลง Database
   Future<void> _submitListing() async {
+    // แปลงข้อความราคาเป็นตัวเลข (ป้องกันแอปเด้งถ้าพิมพ์ตัวอักษร)
+    final int? price = int.tryParse(_priceController.text.trim());
+
     // ตรวจสอบความครบถ้วนของข้อมูล
-    if (_imageFile == null || _priceController.text.isEmpty) {
+    if (_imageFile == null || price == null || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณาเลือกรูปภาพและระบุราคา')),
+        const SnackBar(
+          content: Text('กรุณาเลือกรูปภาพและระบุราคาให้ถูกต้อง'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
@@ -47,7 +53,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
     final userId = supabase.auth.currentUser!.id;
 
     try {
-      // 1. อัปโหลดรูปไปที่ Bucket 'card-images' ที่คุณเพิ่งสร้าง
+      // 1. อัปโหลดรูปไปที่ Bucket 'card-images'
       final fileName = '${DateTime.now().millisecondsSinceEpoch}${p.extension(_imageFile!.path)}';
       final imagePath = 'public/$fileName';
 
@@ -62,21 +68,25 @@ class _AddListingScreenState extends State<AddListingScreen> {
       // 3. บันทึกข้อมูลทั้งหมดลงในตาราง marketplace_listings
       await supabase.from('marketplace_listings').insert({
         'seller_id': userId,
-        'price_thb': int.parse(_priceController.text),
+        'price_thb': price,
         'condition': _selectedCondition,
-        'description': _descriptionController.text,
+        'description': _descriptionController.text.trim(),
         'image_url': imageUrl,
-        'is_deleted': false,
+        'status': 'available', // ✅ แก้ให้ตรงกับ Constraint ในฐานข้อมูล
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ลงขายการ์ดสำเร็จ!')));
-        Navigator.pop(context); // ปิดหน้านี้เมื่อเสร็จ
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ลงขายการ์ดสำเร็จ!'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context); // ปิดหน้านี้เมื่อลงขายเสร็จ
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เกิดข้อผิดพลาด: $e'), backgroundColor: Colors.red),
+      );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -85,7 +95,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('ลงขายการ์ด')),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
+        ? const Center(child: CircularProgressIndicator(color: Colors.orange))
         : SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -99,20 +109,21 @@ class _AddListingScreenState extends State<AddListingScreen> {
                       height: 250,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        color: const Color(0xFF1E1E1E), // ✅ เปลี่ยนสีกล่องให้เข้ากับ Dark Mode
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[400]!),
+                        border: Border.all(color: Colors.grey[700]!),
                       ),
                       child: _imageFile != null
                           ? ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: Image.file(_imageFile!, fit: BoxFit.cover),
                             )
-                          : const Column(
+                          : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.add_a_photo, size: 50, color: Colors.grey),
-                                Text('แตะเพื่อเพิ่มรูปการ์ด', style: TextStyle(color: Colors.grey)),
+                                Icon(Icons.add_a_photo, size: 50, color: Colors.grey[400]),
+                                const SizedBox(height: 8),
+                                Text('แตะเพื่อเพิ่มรูปการ์ด', style: TextStyle(color: Colors.grey[400])),
                               ],
                             ),
                     ),
@@ -140,6 +151,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
                 DropdownButtonFormField<String>(
                   value: _selectedCondition,
                   decoration: const InputDecoration(border: OutlineInputBorder()),
+                  dropdownColor: const Color(0xFF1E1E1E), // ✅ ให้เมนู Dropdown สีเข้ากับ Dark Mode
                   items: _conditions.map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -168,11 +180,17 @@ class _AddListingScreenState extends State<AddListingScreen> {
                 // ปุ่มยืนยัน
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 55,
                   child: ElevatedButton(
                     onPressed: _submitListing,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-                    child: const Text('ลงประกาศขายเลย', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange, // ✅ ใช้สีส้มเพื่อให้เด่นใน Dark Mode
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      )
+                    ),
+                    child: const Text('ลงประกาศขายเลย', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../main.dart'; 
+// import '../main.dart'; // ไม่ได้ใช้แล้ว เปลี่ยนเป็น import หน้า Login แทน
+import 'login_screen.dart'; // ✅ ดึงหน้า Login มาใช้ตอนกด Logout
 import 'admin_panel_screen.dart';
 import 'add_listing_screen.dart';
 import 'my_listings_screen.dart';
@@ -12,7 +13,6 @@ class ProfileScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final supabase = Supabase.instance.client;
     final user = supabase.auth.currentUser;
-    final userEmail = user?.email ?? 'Unknown';
 
     return Scaffold(
       appBar: AppBar(
@@ -21,52 +21,82 @@ class ProfileScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.red),
             onPressed: () async {
+              // ✅ 1. สั่งออกจากระบบ
               await supabase.auth.signOut();
+              
+              // ✅ 2. เด้งกลับไปหน้า Login และเคลียร์ประวัติหน้าต่างทิ้งให้หมด
               if (context.mounted) {
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const TcgMarketApp()));
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (route) => false, // false คือล้าง stack เก่าทิ้ง
+                );
               }
             },
           )
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            const CircleAvatar(radius: 50, child: Icon(Icons.person, size: 50)),
-            const SizedBox(height: 16),
-            Text(userEmail, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 32),
-            
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.add_photo_alternate_outlined, color: Colors.blueAccent),
-              title: const Text('ลงประกาศขายการ์ด'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddListingScreen())),
-            ),
-            ListTile(
-              leading: const Icon(Icons.list_alt_rounded, color: Colors.greenAccent),
-              title: const Text('รายการสินค้าของฉัน'),
-              subtitle: const Text('จัดการสินค้าและลบรายการ', style: TextStyle(color: Colors.grey)),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyListingsScreen())),
-            ),
-            const Divider(),
+      // ✅ 3. รวบ FutureBuilder มาไว้ข้างบน เพื่อดึงข้อมูล username และ role มาพร้อมกัน
+      body: FutureBuilder<Map<String, dynamic>?>(
+        future: supabase.from('profiles').select('username, role').eq('id', user?.id ?? '').maybeSingle(),
+        builder: (context, snapshot) {
+          
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: Colors.orange));
+          }
 
-            FutureBuilder<Map<String, dynamic>?>(
-              future: supabase.from('profiles').select('role').eq('id', user?.id ?? '').maybeSingle(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) return const SizedBox.shrink();
+          final data = snapshot.data;
+          // ถ้าไม่มี username ให้เอา email มาตัด @ ทิ้งแล้วโชว์ไปก่อน
+          final fallbackName = user?.email?.split('@')[0] ?? 'Unknown';
+          final String username = data?['username'] ?? fallbackName;
+          final String role = data?['role'] ?? 'user';
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                const SizedBox(height: 40),
+                const CircleAvatar(radius: 50, child: Icon(Icons.person, size: 50)),
+                const SizedBox(height: 16),
                 
-                if (snapshot.hasData && snapshot.data?['role'] == 'admin') {
-                  return Padding(
+                // ✅ 4. โชว์ Username ของจริงที่ดึงมาจากฐานข้อมูล
+                Text(
+                  username, 
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)
+                ),
+                // โชว์อีเมลจำลองไว้เล็กๆ ด้านล่างเผื่อดูอ้างอิง
+                Text(
+                  user?.email ?? '', 
+                  style: const TextStyle(fontSize: 14, color: Colors.grey)
+                ),
+                
+                const SizedBox(height: 32),
+                const Divider(),
+                
+                ListTile(
+                  leading: const Icon(Icons.add_photo_alternate_outlined, color: Colors.blueAccent),
+                  title: const Text('ลงประกาศขายการ์ด'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddListingScreen())),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.list_alt_rounded, color: Colors.greenAccent),
+                  title: const Text('รายการสินค้าของฉัน'),
+                  subtitle: const Text('จัดการสินค้าและลบรายการ', style: TextStyle(color: Colors.grey)),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MyListingsScreen())),
+                ),
+                
+                const Divider(),
+
+                // ✅ 5. เช็ค Role จากข้อมูลที่เราดึงมาตั้งแต่ต้น ถ้าเป็น Admin ค่อยโชว์ป้าย
+                if (role == 'admin')
+                  Padding(
                     padding: const EdgeInsets.all(16),
                     child: Card(
-                      color: Colors.red.withOpacity(0.15),
+                      color: Colors.red.withValues(alpha: 0.15), // แก้ withOpacity เป็น withValues กันเส้นเหลือง
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.red.withOpacity(0.3)),
+                        side: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
                       ),
                       child: ListTile(
                         leading: const Icon(Icons.admin_panel_settings, color: Colors.redAccent),
@@ -76,13 +106,11 @@ class ProfileScreen extends StatelessWidget {
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminPanelScreen())),
                       ),
                     ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
+                  ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

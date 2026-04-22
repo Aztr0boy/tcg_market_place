@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// ✅ เพิ่ม Import หน้า Splash Screen เข้ามา
+import 'screens/splash_screen.dart'; 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/market_screen.dart';
@@ -41,12 +44,15 @@ class TcgMarketApp extends StatelessWidget {
           unselectedItemColor: Colors.grey,
         ),
       ),
-      home: Supabase.instance.client.auth.currentUser == null 
-          ? const LoginScreen() 
-          : const MainLayout(),
+      // ✅ เปลี่ยนตรงนี้ให้เริ่มที่ SplashScreen เสมอ (แล้วให้ Splash เป็นคนจัดการว่าจะไปหน้าไหนต่อ)
+      home: const SplashScreen(),
     );
   }
 }
+
+// -------------------------------------------------------------
+// ส่วนของ MainLayout (Bottom Navigation Bar) ไม่ต้องแก้ ทำมาดีแล้วครับ!
+// -------------------------------------------------------------
 class MainLayout extends StatefulWidget {
   const MainLayout({Key? key}) : super(key: key);
 

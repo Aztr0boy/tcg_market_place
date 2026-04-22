@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'chat_room_screen.dart'; // เตรียมเชื่อมไปหน้าแชท
+import 'chat_room_screen.dart'; 
 
 class CardDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
@@ -14,6 +14,7 @@ class CardDetailScreen extends StatefulWidget {
 class _CardDetailScreenState extends State<CardDetailScreen> {
   bool _isLoadingChat = false;
 
+  // ฟังก์ชันเริ่มแชท (ของคุณเขียนไว้ดีแล้ว ผมคงไว้เหมือนเดิมครับ)
   Future<void> _startChat() async {
     setState(() => _isLoadingChat = true);
     final supabase = Supabase.instance.client;
@@ -24,7 +25,6 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
     if (myId == null) return;
 
     try {
-      // 1. เช็คว่ามีห้องแชทของการ์ดใบนี้ ระหว่างเรากับคนขาย อยู่แล้วหรือยัง?
       final existingChat = await supabase
           .from('chats')
           .select('id')
@@ -36,10 +36,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
       String chatId;
 
       if (existingChat != null) {
-        // มีห้องแชทแล้ว ใช้ ID เดิม
         chatId = existingChat['id'].toString();
       } else {
-        // ยังไม่เคยคุยกัน สร้างห้องแชทใหม่
         final newChat = await supabase.from('chats').insert({
           'buyer_id': myId,
           'seller_id': sellerId,
@@ -49,7 +47,6 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
         chatId = newChat['id'].toString();
       }
 
-      // 2. พาวาร์ปไปหน้าห้องแชท
       if (mounted) {
         Navigator.push(context, MaterialPageRoute(
           builder: (_) => ChatRoomScreen(chatId: chatId, itemData: widget.item)
@@ -62,13 +59,76 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
     }
   }
 
+  // ✅ 1. เพิ่มฟังก์ชันสำหรับลบการ์ด
+  Future<void> _deleteListing() async {
+    // โชว์ Popup ถามเพื่อความแน่ใจก่อนลบ
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text('ยืนยันการลบ', style: TextStyle(color: Colors.white)),
+        content: const Text('คุณแน่ใจหรือไม่ว่าต้องการลบการ์ดใบนี้ออกจากตลาด?', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false), 
+            child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey))
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('ลบการ์ด', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      // สั่งลบจาก Supabase
+      await Supabase.instance.client
+          .from('marketplace_listings')
+          .delete()
+          .eq('id', widget.item['id']);
+          
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ลบการ์ดสำเร็จ'), backgroundColor: Colors.green)
+        );
+        Navigator.pop(context); // ลบเสร็จให้เด้งกลับหน้าก่อนหน้า
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ลบไม่สำเร็จ: $e'), backgroundColor: Colors.red));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final myUserId = Supabase.instance.client.auth.currentUser?.id;
     final isMyItem = myUserId == widget.item['seller_id'];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('รายละเอียดสินค้า')),
+      appBar: AppBar(
+        title: const Text('รายละเอียดสินค้า'),
+        actions: [
+          // ✅ 2. เช็คสิทธิ์ Admin หรือเจ้าของ เพื่อโชว์ปุ่มถังขยะ
+          FutureBuilder<Map<String, dynamic>?>(
+            future: Supabase.instance.client.from('profiles').select('role').eq('id', myUserId ?? '').maybeSingle(),
+            builder: (context, snapshot) {
+              final isAdmin = snapshot.data?['role'] == 'admin';
+
+              // ถ้าเป็นเจ้าของการ์ด หรือเป็น Admin ให้โชว์ปุ่มลบ
+              if (isAdmin || isMyItem) {
+                return IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                  onPressed: _deleteListing,
+                );
+              }
+              return const SizedBox.shrink(); // ถ้าไม่ใช่ ไม่ต้องโชว์อะไร
+            },
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +151,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                       Text('฿${widget.item['price_thb']}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green)),
                       Chip(
                         label: Text(widget.item['condition'] ?? 'ไม่ระบุ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        backgroundColor: Colors.blue.withOpacity(0.1),
+                        // ✅ 3. แก้ไข withOpacity เป็น withValues
+                        backgroundColor: Colors.blue.withValues(alpha: 0.1),
                         side: BorderSide.none,
                       ),
                     ],
@@ -102,7 +163,8 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                    // ✅ 3. แก้ไข withOpacity เป็น withValues
+                    decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                     child: Text(widget.item['description'] ?? '-', style: const TextStyle(fontSize: 16, height: 1.5)),
                   ),
                 ],
@@ -126,7 +188,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isMyItem ? Colors.grey : Colors.orange,
+                backgroundColor: isMyItem ? Colors.grey[800] : Colors.orange, // ปรับสีปุ่มเทาให้เข้ากับ Dark Mode
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../main.dart';
+import 'register_screen.dart';
+import 'transition_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -10,27 +11,41 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _supabase = Supabase.instance.client;
   bool _isLoading = false;
 
   Future<void> _signIn() async {
+    // ป้องกันการกดปุ่มรัวๆ หรือกรอกข้อมูลว่างเปล่า
+    if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('กรุณากรอก Username และ Password'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      await _supabase.auth.signInWithPassword(
-        email: _emailController.text.trim(),
+      final username = _usernameController.text.trim();
+      final fakeEmail = "$username@tcgmarket.com"; // แปลง Username ให้ระบบ Auth เข้าใจ
+
+      // 1. ส่งคำสั่งล็อกอินไปที่ Supabase
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: fakeEmail,
         password: _passwordController.text.trim(),
       );
+
+      // 2. ถ้าล็อกอินผ่าน ทำลายหน้า Login ทิ้ง แล้วพาไปหน้า TransitionScreen ทันที
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const MainLayout()),
+          MaterialPageRoute(builder: (_) => const TransitionScreen()), 
         );
       }
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('เกิดข้อผิดพลาด: ${e.toString()}')),
+        const SnackBar(content: Text('Username หรือ Password ไม่ถูกต้อง'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -40,51 +55,109 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.style, size: 80, color: Colors.blue),
-            const SizedBox(height: 16),
-            const Text(
-              'TCG Market',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+      backgroundColor: const Color(0x121212), // สีพื้นหลัง Dark Mode
+      body: Center(
+        child: SingleChildScrollView( // ป้องกันหน้าจอพังเวลาคีย์บอร์ดเด้งขึ้นมา
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 🎨 แก้ไขส่วนโลโก้แอปแล้ว (เปลี่ยนเป็น BoxShape.circle และ .withValues)
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2C3E50).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.style, 
+                  size: 100,
+                  color: Color(0xFF2C3E50),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 24),
+              
+              // ชื่อแอป
+              const Text(
+                'TCG MARKET',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2C3E50),
+                  letterSpacing: 2,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _signIn,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(
-                        double.infinity,
-                        50,
-                      ), 
-                      padding: const EdgeInsets.all(
-                        16,
-                      ), 
-                    ),
-                    child: const Text('เข้าสู่ระบบ'),
+              const Text(
+                'ศูนย์รวมการ์ดสะสมของคุณ',
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 48),
+
+              // ช่องกรอก Username
+              TextField(
+                controller: _usernameController,
+                decoration: InputDecoration(
+                  labelText: 'Username',
+                  prefixIcon: const Icon(Icons.person_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-          ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // ช่องกรอก Password
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                obscureText: true,
+              ),
+              const SizedBox(height: 32),
+
+              // ปุ่มเข้าสู่ระบบ
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _signIn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2C3E50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading 
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'เข้าสู่ระบบ', 
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+              
+              // ปุ่มไปหน้าสมัครสมาชิก
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                  );
+                },
+                child: const Text(
+                  'ยังไม่มีบัญชี? สมัครสมาชิกใหม่ที่นี่',
+                  style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
