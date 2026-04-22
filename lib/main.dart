@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/market_screen.dart';
@@ -26,21 +25,19 @@ class TcgMarketApp extends StatelessWidget {
     return MaterialApp(
       title: 'TCG Market',
       debugShowCheckedModeBanner: false,
-      // 🔥 บังคับเป็นธีมมืดตรงนี้เลย
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark, // 👈 หัวใจสำคัญ
+        brightness: Brightness.dark, 
         primarySwatch: Colors.blue,
-        // ใช้สีเทาเข้ม (0xFF121212) จะดูแพงกว่าสีดำสนิท (0xFF000000)
         scaffoldBackgroundColor: const Color(0xFF121212), 
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E1E1E), // สีแถบบน
+          backgroundColor: Color(0xFF1E1E1E), 
           foregroundColor: Colors.white,
         ),
-        cardColor: const Color(0xFF1E1E1E), // สีของการ์ดต่างๆ
+        cardColor: const Color(0xFF1E1E1E),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Color(0xFF1E1E1E),
-          selectedItemColor: Colors.orange, // สีปุ่มที่เลือก (เด่นๆ)
+          selectedItemColor: Colors.orange, 
           unselectedItemColor: Colors.grey,
         ),
       ),
@@ -50,8 +47,6 @@ class TcgMarketApp extends StatelessWidget {
     );
   }
 }
-
-// ... (โค้ด MainLayout ส่วนที่เหลือเหมือนเดิม ไม่ต้องเปลี่ยนครับ) ...
 class MainLayout extends StatefulWidget {
   const MainLayout({Key? key}) : super(key: key);
 

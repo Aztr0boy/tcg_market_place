@@ -3,102 +3,104 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'card_detail_screen.dart';
 import 'add_listing_screen.dart';
 
-class MarketScreen extends StatelessWidget {
+class MarketScreen extends StatefulWidget {
   const MarketScreen({Key? key}) : super(key: key);
+  @override
+  State<MarketScreen> createState() => _MarketScreenState();
+}
+
+class _MarketScreenState extends State<MarketScreen> {
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
-    final supabase = Supabase.instance.client;
-
     return Scaffold(
-      appBar: AppBar(title: const Text('ตลาดซื้อขาย')),
-      body: FutureBuilder<List<dynamic>>(
-        // สมมติว่าสร้าง View ชื่อ market_feed ไว้แล้ว
-        future: supabase
-            .from('marketplace_listings')
-            .select(
-              'id, price_thb, condition, cards(id, name, image_url), profiles(display_name)',
-            )
-            .eq('is_deleted', false),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
-            return const Center(child: CircularProgressIndicator());
-          if (!snapshot.hasData || snapshot.data!.isEmpty)
-            return const Center(child: Text('ไม่มีการตั้งขาย'));
-
-          final listings = snapshot.data!;
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 0.65,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+      appBar: AppBar(title: const Text('ตลาดการ์ด')),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: TextField(
+              onChanged: (v) => setState(() => _searchQuery = v),
+              decoration: InputDecoration(
+                hintText: 'ค้นหาการ์ด...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
-            itemCount: listings.length,
-            itemBuilder: (context, index) {
-              final listing = listings[index];
-              final card = listing['cards'];
+          ),
+          Expanded(
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: Supabase.instance.client
+                  .from('marketplace_listings')
+                  .stream(primaryKey: ['id'])
+                  .order('created_at', ascending: false),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                
+                // กรองข้อมูลตามคำค้นหา
+                final items = snapshot.data!.where((i) => 
+                  i['description'].toString().toLowerCase().contains(_searchQuery.toLowerCase())
+                ).toList();
 
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CardDetailScreen(
-                        item: card,
-                      ), // ✅ ส่งตัวแปร card ไปทั้งก้อนเลย จบ!
-                    ),
-                  );
-                },
-                child: Card(
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Image.network(
-                          card['image_url'] ??
-                              'https://via.placeholder.com/150',
-                          fit: BoxFit.cover,
-                          width: double.infinity,
+                return GridView.builder(
+                  padding: const EdgeInsets.all(10),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2, 
+                    childAspectRatio: 0.75, 
+                    crossAxisSpacing: 10, 
+                    mainAxisSpacing: 10
+                  ),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    final bool isSold = item['status'] == 'sold';
+
+                    return Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => Navigator.push(
+                          context, 
+                          MaterialPageRoute(builder: (_) => CardDetailScreen(item: item))
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              card['name'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.network(item['image_url'] ?? '', fit: BoxFit.cover),
+                                  if (isSold)
+                                    Container(
+                                      color: Colors.black54,
+                                      child: const Center(
+                                        child: Text('ขายแล้ว', style: TextStyle(color: Colors.white)),
+                                      ),
+                                    ),
+                                ],
                               ),
-                              maxLines: 1,
                             ),
-                            Text(
-                              '฿${listing['price_thb']}',
-                              style: const TextStyle(
-                                color: Colors.green,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Padding(
+                              padding: const EdgeInsets.all(8),
+                              child: Text('฿${item['price_thb']}', 
+                                style: const TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AddListingScreen()),
+          context, 
+          MaterialPageRoute(builder: (_) => const AddListingScreen())
         ),
         child: const Icon(Icons.add),
       ),

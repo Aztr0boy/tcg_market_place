@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'notification_screen.dart';
+import 'card_detail_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -8,78 +8,117 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final supabase = Supabase.instance.client;
-    final userId = supabase.auth.currentUser?.id;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('TCG Market', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          // แก้ไข StreamBuilder ให้ระบุ Type เป็น List<Map<String, dynamic>>
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 180.0,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text('TCG Marketplace', 
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+              background: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF2C3E50), Color(0xFF4CA1AF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                child: Icon(Icons.style, size: 80, color: Colors.white.withOpacity(0.2)),
+              ),
+            ),
+          ),
+
+          // ✅ จุดที่เคย Error: ย้าย Padding มาหุ้ม Text แทนการใส่ใน SliverToBoxAdapter
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: const Text(
+                'สินค้ามาใหม่ล่าสุด',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+
           StreamBuilder<List<Map<String, dynamic>>>(
-            // ใช้ Stream พื้นฐาน และกรองข้อมูลด้วย .map เพื่อความเสถียร
             stream: supabase
-                .from('notifications')
+                .from('marketplace_listings')
                 .stream(primaryKey: ['id'])
-                .order('created_at')
-                .map((items) => items
-                    .where((item) =>
-                        item['user_id'] == userId && item['is_read'] == false)
-                    .toList()),
+                .limit(10)
+                .order('created_at', ascending: false),
             builder: (context, snapshot) {
-              // เช็ค Error ป้องกันแอปเด้ง
-              if (snapshot.hasError) {
-                return const IconButton(
-                  icon: Icon(Icons.notifications_off),
-                  onPressed: null,
-                );
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
               }
 
-              // ระบุ Type ให้ชัดเจนเพื่อเรียกใช้ .length ได้
-              final List<Map<String, dynamic>> unreadNotifications = snapshot.data ?? [];
-              final unreadCount = unreadNotifications.length;
+              final items = snapshot.data ?? [];
 
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.notifications),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const NotificationScreen()),
-                    ),
+              return SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverGrid(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 15,
+                    crossAxisSpacing: 15,
+                    childAspectRatio: 0.75,
                   ),
-                  if (unreadCount > 0)
-                    Positioned(
-                      right: 8,
-                      top: 8,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final item = items[index];
+                      final bool isSold = item['status'] == 'sold';
+
+                      return GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => CardDetailScreen(item: item)),
                         ),
-                        constraints: const BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        child: Text(
-                          '$unreadCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                        child: Card(
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Image.network(
+                                      item['image_url'] ?? '',
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (ctx, err, st) => const Icon(Icons.broken_image),
+                                    ),
+                                    if (isSold)
+                                      Container(
+                                        color: Colors.black54,
+                                        child: const Center(
+                                          child: Text('SOLD OUT', 
+                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text('฿${item['price_thb']}', 
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold, 
+                                    color: isSold ? Colors.grey : Colors.green)),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                      ),
-                    )
-                ],
+                      );
+                    },
+                    childCount: items.length,
+                  ),
+                ),
               );
             },
-          )
+          ),
         ],
       ),
-      body: const Center(child: Text('แบนเนอร์ข่าวสาร และ การ์ดมาแรง')),
     );
   }
 }

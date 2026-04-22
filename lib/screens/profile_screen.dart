@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../main.dart'; // import ไว้เผื่อเรียกใช้การกลับหน้าแรก
+import '../main.dart'; 
 import 'admin_panel_screen.dart';
 import 'add_listing_screen.dart';
 import 'my_listings_screen.dart';
@@ -54,9 +54,6 @@ class ProfileScreen extends StatelessWidget {
             ),
             const Divider(),
 
-            // 🔥 ลบส่วนสวิตช์ Night Mode ออกไปเลย 🔥
-
-            // --- ระบบ Admin ---
             FutureBuilder<Map<String, dynamic>?>(
               future: supabase.from('profiles').select('role').eq('id', user?.id ?? '').maybeSingle(),
               builder: (context, snapshot) {

@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final String chatId;
-  final Map<String, dynamic> itemData; // รับข้อมูลการ์ดมาโชว์ที่หัวแชทด้วย
+  final Map<String, dynamic> itemData; 
 
   const ChatRoomScreen({Key? key, required this.chatId, required this.itemData}) : super(key: key);
 
@@ -20,7 +20,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    _messageController.clear(); // ล้างช่องพิมพ์ทันทีให้ดูไว
+    _messageController.clear(); 
 
     try {
       await _supabase.from('messages').insert({
@@ -47,10 +47,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       ),
       body: Column(
         children: [
-          // 1. พื้นที่แสดงข้อความ
           Expanded(
             child: StreamBuilder<List<Map<String, dynamic>>>(
-              // ดึงข้อความในห้องนี้ เรียงจากใหม่ไปเก่า
               stream: _supabase
                   .from('messages')
                   .stream(primaryKey: ['id'])
@@ -63,7 +61,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 if (messages.isEmpty) return const Center(child: Text('เริ่มการสนทนาเลย!'));
 
                 return ListView.builder(
-                  reverse: true, // ให้ข้อความใหม่อยู่ด้านล่าง
+                  reverse: true, 
                   padding: const EdgeInsets.all(16),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
@@ -90,8 +88,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               },
             ),
           ),
-          
-          // 2. แถบพิมพ์ข้อความด้านล่าง
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(8.0),

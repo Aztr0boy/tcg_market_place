@@ -12,7 +12,6 @@ class MyListingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('รายการสินค้าของฉัน')),
       body: StreamBuilder<List<Map<String, dynamic>>>(
-        // 🔥 1. ดึงข้อมูลของตัวเองมาทั้งหมด (ใช้ eq ได้แค่ 1 อัน เพื่อป้องกัน Error)
         stream: supabase
             .from('marketplace_listings')
             .stream(primaryKey: ['id'])
@@ -25,7 +24,6 @@ class MyListingsScreen extends StatelessWidget {
           
           final allMyItems = snapshot.data ?? [];
 
-          // 🔥 2. ใช้ Dart กรองข้อมูลเอาเฉพาะอันที่สถานะยังเป็น 'available'
           final myItems = allMyItems.where((item) => item['status'] == 'available').toList();
 
           if (myItems.isEmpty) {

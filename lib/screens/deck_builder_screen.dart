@@ -86,7 +86,7 @@ class _DeckBuilderScreenState extends State<DeckBuilderScreen> {
             width: double.infinity,
             color: Colors.blueGrey[50],
             child: ElevatedButton(
-              onPressed: () { /* บันทึกเด็คลงตาราง user_decks */ },
+              onPressed: () {  },
               child: Text('บันทึกเด็ค (${_myDeck.length} ใบ)'),
             ),
           )

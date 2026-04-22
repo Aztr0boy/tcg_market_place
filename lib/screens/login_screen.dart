@@ -77,10 +77,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       minimumSize: const Size(
                         double.infinity,
                         50,
-                      ), // แก้ Size ให้ถูกต้อง
+                      ), 
                       padding: const EdgeInsets.all(
                         16,
-                      ), // ย้าย const มาไว้ตรงนี้
+                      ), 
                     ),
                     child: const Text('เข้าสู่ระบบ'),
                   ),
