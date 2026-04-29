@@ -6,7 +6,6 @@ import 'package:path/path.dart' as p;
 
 class AddListingScreen extends StatefulWidget {
   const AddListingScreen({Key? key}) : super(key: key);
-
   @override
   State<AddListingScreen> createState() => _AddListingScreenState();
 }
@@ -17,22 +16,16 @@ class _AddListingScreenState extends State<AddListingScreen> {
   String _selectedCondition = 'Near Mint'; 
   File? _imageFile;
   bool _isLoading = false;
-
   final List<String> _conditions = ['Mint', 'Near Mint', 'Excellent', 'Played', 'Poor'];
-
-  
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
       });
     }
   }
-
-  
   Future<void> _submitListing() async {
     final int? price = int.tryParse(_priceController.text.trim());
 

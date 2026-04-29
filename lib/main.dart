@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-// ✅ เพิ่ม Import หน้า Splash Screen เข้ามา
 import 'screens/splash_screen.dart'; 
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
@@ -44,18 +42,12 @@ class TcgMarketApp extends StatelessWidget {
           unselectedItemColor: Colors.grey,
         ),
       ),
-      // ✅ เปลี่ยนตรงนี้ให้เริ่มที่ SplashScreen เสมอ (แล้วให้ Splash เป็นคนจัดการว่าจะไปหน้าไหนต่อ)
       home: const SplashScreen(),
     );
   }
 }
-
-// -------------------------------------------------------------
-// ส่วนของ MainLayout (Bottom Navigation Bar) ไม่ต้องแก้ ทำมาดีแล้วครับ!
-// -------------------------------------------------------------
 class MainLayout extends StatefulWidget {
   const MainLayout({Key? key}) : super(key: key);
-
   @override
   State<MainLayout> createState() => _MainLayoutState();
 }
@@ -63,7 +55,6 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
   final _supabase = Supabase.instance.client;
-
   final List<Widget> _screens = [
     const HomeScreen(),
     const MarketScreen(),
@@ -82,7 +73,6 @@ class _MainLayoutState extends State<MainLayout> {
   void _listenForNotifications() {
     final userId = _supabase.auth.currentUser?.id;
     if (userId == null) return;
-
     _supabase.from('notifications').stream(primaryKey: ['id']).eq('user_id', userId).listen((data) {
       if (data.isNotEmpty && mounted) {
         final latestNotif = data.last;
