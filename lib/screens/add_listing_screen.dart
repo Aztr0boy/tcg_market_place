@@ -20,7 +20,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
 
   final List<String> _conditions = ['Mint', 'Near Mint', 'Excellent', 'Played', 'Poor'];
 
-  // ฟังก์ชันเลือกรูปจากแกลเลอรี
+  
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -32,12 +32,10 @@ class _AddListingScreenState extends State<AddListingScreen> {
     }
   }
 
-  // ฟังก์ชันอัปโหลดรูปและบันทึกข้อมูลลง Database
+  
   Future<void> _submitListing() async {
-    // แปลงข้อความราคาเป็นตัวเลข (ป้องกันแอปเด้งถ้าพิมพ์ตัวอักษร)
     final int? price = int.tryParse(_priceController.text.trim());
 
-    // ตรวจสอบความครบถ้วนของข้อมูล
     if (_imageFile == null || price == null || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -53,7 +51,6 @@ class _AddListingScreenState extends State<AddListingScreen> {
     final userId = supabase.auth.currentUser!.id;
 
     try {
-      // 1. อัปโหลดรูปไปที่ Bucket 'card-images'
       final fileName = '${DateTime.now().millisecondsSinceEpoch}${p.extension(_imageFile!.path)}';
       final imagePath = 'public/$fileName';
 
@@ -62,24 +59,23 @@ class _AddListingScreenState extends State<AddListingScreen> {
         _imageFile!,
       );
 
-      // 2. ดึง Public URL ของรูปออกมา
       final String imageUrl = supabase.storage.from('card-images').getPublicUrl(imagePath);
 
-      // 3. บันทึกข้อมูลทั้งหมดลงในตาราง marketplace_listings
+
       await supabase.from('marketplace_listings').insert({
         'seller_id': userId,
         'price_thb': price,
         'condition': _selectedCondition,
         'description': _descriptionController.text.trim(),
         'image_url': imageUrl,
-        'status': 'available', // ✅ แก้ให้ตรงกับ Constraint ในฐานข้อมูล
+        'status': 'available', 
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ลงขายการ์ดสำเร็จ!'), backgroundColor: Colors.green),
         );
-        Navigator.pop(context); // ปิดหน้านี้เมื่อลงขายเสร็จ
+        Navigator.pop(context); 
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -101,7 +97,6 @@ class _AddListingScreenState extends State<AddListingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ส่วนแสดงและเลือกรูป
                 Center(
                   child: GestureDetector(
                     onTap: _pickImage,
@@ -109,7 +104,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
                       height: 250,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E), // ✅ เปลี่ยนสีกล่องให้เข้ากับ Dark Mode
+                        color: const Color(0xFF1E1E1E), 
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey[700]!),
                       ),
@@ -130,8 +125,6 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
-                // กรอกราคา
                 const Text('ราคาที่ต้องการขาย (บาท)', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 TextField(
@@ -144,14 +137,12 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // เลือกสภาพการ์ด
                 const Text('สภาพการ์ด', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   value: _selectedCondition,
                   decoration: const InputDecoration(border: OutlineInputBorder()),
-                  dropdownColor: const Color(0xFF1E1E1E), // ✅ ให้เมนู Dropdown สีเข้ากับ Dark Mode
+                  dropdownColor: const Color(0xFF1E1E1E), 
                   items: _conditions.map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
@@ -163,8 +154,6 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // รายละเอียด
                 const Text('รายละเอียดเพิ่มเติม', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 TextField(
@@ -176,15 +165,13 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // ปุ่มยืนยัน
                 SizedBox(
                   width: double.infinity,
                   height: 55,
                   child: ElevatedButton(
                     onPressed: _submitListing,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange, // ✅ ใช้สีส้มเพื่อให้เด่นใน Dark Mode
+                      backgroundColor: Colors.orange, 
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

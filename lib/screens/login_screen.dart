@@ -16,7 +16,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
 
   Future<void> _signIn() async {
-    // ป้องกันการกดปุ่มรัวๆ หรือกรอกข้อมูลว่างเปล่า
     if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('กรุณากรอก Username และ Password'), backgroundColor: Colors.orange),
@@ -27,15 +26,11 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       final username = _usernameController.text.trim();
-      final fakeEmail = "$username@tcgmarket.com"; // แปลง Username ให้ระบบ Auth เข้าใจ
-
-      // 1. ส่งคำสั่งล็อกอินไปที่ Supabase
+      final fakeEmail = "$username@tcgmarket.com"; 
       await Supabase.instance.client.auth.signInWithPassword(
         email: fakeEmail,
         password: _passwordController.text.trim(),
       );
-
-      // 2. ถ้าล็อกอินผ่าน ทำลายหน้า Login ทิ้ง แล้วพาไปหน้า TransitionScreen ทันที
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -55,14 +50,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0x121212), // สีพื้นหลัง Dark Mode
+      backgroundColor: const Color(0x121212), 
       body: Center(
-        child: SingleChildScrollView( // ป้องกันหน้าจอพังเวลาคีย์บอร์ดเด้งขึ้นมา
+        child: SingleChildScrollView( 
           padding: const EdgeInsets.all(32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 🎨 แก้ไขส่วนโลโก้แอปแล้ว (เปลี่ยนเป็น BoxShape.circle และ .withValues)
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -76,8 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
-              // ชื่อแอป
               const Text(
                 'TCG MARKET',
                 style: TextStyle(
@@ -92,8 +84,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 48),
-
-              // ช่องกรอก Username
               TextField(
                 controller: _usernameController,
                 decoration: InputDecoration(
@@ -105,8 +95,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // ช่องกรอก Password
               TextField(
                 controller: _passwordController,
                 decoration: InputDecoration(
@@ -119,8 +107,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: true,
               ),
               const SizedBox(height: 32),
-
-              // ปุ่มเข้าสู่ระบบ
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -140,10 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                 ),
               ),
-
               const SizedBox(height: 16),
-              
-              // ปุ่มไปหน้าสมัครสมาชิก
               TextButton(
                 onPressed: () {
                   Navigator.push(

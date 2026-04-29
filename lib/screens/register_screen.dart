@@ -19,22 +19,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // แปลง Username เป็น Format Email สำหรับ Supabase Auth
       final fakeEmail = "$username@tcgmarket.com";
-
       final response = await Supabase.instance.client.auth.signUp(
         email: fakeEmail,
         password: _passwordController.text.trim(),
       );
-
       if (response.user != null) {
-        // บันทึก Username จริงลงในตาราง profiles
         await Supabase.instance.client.from('profiles').insert({
           'id': response.user!.id,
           'username': username,
         });
       }
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('สมัครสมาชิกสำเร็จ!'), backgroundColor: Colors.green),
@@ -49,7 +44,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (mounted) setState(() => _isLoading = false);
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

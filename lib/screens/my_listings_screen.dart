@@ -78,7 +78,6 @@ class MyListingsScreen extends StatelessWidget {
           TextButton(
             onPressed: () async {
               try {
-                // เปลี่ยนสถานะเป็น deleted แทนการลบข้อมูลทิ้ง
                 await Supabase.instance.client
                     .from('marketplace_listings')
                     .update({'status': 'deleted'})

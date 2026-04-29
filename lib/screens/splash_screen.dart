@@ -18,21 +18,15 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuthState() async {
-    // โชว์หน้าโลโก้ค้างไว้ 1.5 วินาที
     await Future.delayed(const Duration(milliseconds: 1500));
-
-    // เช็คว่าผู้ใช้เคยล็อกอินค้างไว้หรือไม่
     final session = Supabase.instance.client.auth.currentSession;
-    
     if (mounted) {
       if (session != null) {
-        // ถ้าเคยล็อกอินแล้ว -> พาไปหน้า MainLayout (มีแถบเมนูด้านล่าง)
         Navigator.pushReplacement(
           context, 
           MaterialPageRoute(builder: (_) => const MainLayout())
         );
       } else {
-        // ถ้ายังไม่เคยล็อกอิน -> พาไปหน้า LoginScreen
         Navigator.pushReplacement(
           context, 
           MaterialPageRoute(builder: (_) => const LoginScreen())
@@ -44,12 +38,12 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // สีพื้นหลัง Dark Mode
+      backgroundColor: const Color(0xFF121212), //
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.style, size: 100, color: Colors.orange), // ไอคอนสีส้มให้เข้ากับธีม
+            Icon(Icons.style, size: 100, color: Colors.orange), 
             SizedBox(height: 24),
             Text(
               'TCG MARKET',
@@ -61,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             SizedBox(height: 40),
-            CircularProgressIndicator(color: Colors.orange), // วงกลมโหลดสีส้ม
+            CircularProgressIndicator(color: Colors.orange), 
           ],
         ),
       ),

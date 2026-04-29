@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../main.dart'; // ✅ 1. ต้อง import ไฟล์ main.dart เข้ามาเพื่อเรียกใช้ MainLayout
+import '../main.dart'; 
 
 class TransitionScreen extends StatefulWidget {
   const TransitionScreen({Key? key}) : super(key: key);
@@ -16,13 +16,10 @@ class _TransitionScreenState extends State<TransitionScreen> {
   }
 
   Future<void> _loadDataAndMoveToHome() async {
-    // โชว์หน้าโหลดนี้ค้างไว้ 1.5 วินาที
     await Future.delayed(const Duration(milliseconds: 1500));
-
     if (mounted) {
       Navigator.pushReplacement(
         context,
-        // ✅ 2. เปลี่ยนตรงนี้จาก HomeScreen() เป็น MainLayout()
         MaterialPageRoute(builder: (_) => const MainLayout()),
       );
     }
@@ -31,7 +28,7 @@ class _TransitionScreenState extends State<TransitionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // เปลี่ยนเป็นสีดำตามธีม
+      backgroundColor: const Color(0xFF121212), 
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

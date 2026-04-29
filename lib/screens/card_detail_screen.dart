@@ -14,7 +14,6 @@ class CardDetailScreen extends StatefulWidget {
 class _CardDetailScreenState extends State<CardDetailScreen> {
   bool _isLoadingChat = false;
 
-  // ฟังก์ชันเริ่มแชท (ของคุณเขียนไว้ดีแล้ว ผมคงไว้เหมือนเดิมครับ)
   Future<void> _startChat() async {
     setState(() => _isLoadingChat = true);
     final supabase = Supabase.instance.client;
@@ -59,9 +58,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
     }
   }
 
-  // ✅ 1. เพิ่มฟังก์ชันสำหรับลบการ์ด
   Future<void> _deleteListing() async {
-    // โชว์ Popup ถามเพื่อความแน่ใจก่อนลบ
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -85,7 +82,6 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
     if (confirm != true) return;
 
     try {
-      // สั่งลบจาก Supabase
       await Supabase.instance.client
           .from('marketplace_listings')
           .delete()
@@ -95,7 +91,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ลบการ์ดสำเร็จ'), backgroundColor: Colors.green)
         );
-        Navigator.pop(context); // ลบเสร็จให้เด้งกลับหน้าก่อนหน้า
+        Navigator.pop(context); 
       }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('ลบไม่สำเร็จ: $e'), backgroundColor: Colors.red));
@@ -111,20 +107,17 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
       appBar: AppBar(
         title: const Text('รายละเอียดสินค้า'),
         actions: [
-          // ✅ 2. เช็คสิทธิ์ Admin หรือเจ้าของ เพื่อโชว์ปุ่มถังขยะ
           FutureBuilder<Map<String, dynamic>?>(
             future: Supabase.instance.client.from('profiles').select('role').eq('id', myUserId ?? '').maybeSingle(),
             builder: (context, snapshot) {
               final isAdmin = snapshot.data?['role'] == 'admin';
-
-              // ถ้าเป็นเจ้าของการ์ด หรือเป็น Admin ให้โชว์ปุ่มลบ
               if (isAdmin || isMyItem) {
                 return IconButton(
                   icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                   onPressed: _deleteListing,
                 );
               }
-              return const SizedBox.shrink(); // ถ้าไม่ใช่ ไม่ต้องโชว์อะไร
+              return const SizedBox.shrink(); 
             },
           ),
         ],
@@ -151,7 +144,6 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                       Text('฿${widget.item['price_thb']}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green)),
                       Chip(
                         label: Text(widget.item['condition'] ?? 'ไม่ระบุ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        // ✅ 3. แก้ไข withOpacity เป็น withValues
                         backgroundColor: Colors.blue.withValues(alpha: 0.1),
                         side: BorderSide.none,
                       ),
@@ -163,7 +155,6 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
-                    // ✅ 3. แก้ไข withOpacity เป็น withValues
                     decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                     child: Text(widget.item['description'] ?? '-', style: const TextStyle(fontSize: 16, height: 1.5)),
                   ),
@@ -188,7 +179,7 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isMyItem ? Colors.grey[800] : Colors.orange, // ปรับสีปุ่มเทาให้เข้ากับ Dark Mode
+                backgroundColor: isMyItem ? Colors.grey[800] : Colors.orange, 
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),

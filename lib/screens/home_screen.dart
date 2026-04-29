@@ -17,7 +17,6 @@ class HomeScreen extends StatelessWidget {
             expandedHeight: 200.0,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              // ปรับส่วน Title ให้แสดง Username แทนชื่อแอปเฉยๆ
               title: FutureBuilder<Map<String, dynamic>?>(
                 future: supabase
                     .from('profiles')
@@ -51,8 +50,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-
-          // ส่วนแสดงสินค้ามาใหม่ล่าสุด
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
