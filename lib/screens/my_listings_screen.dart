@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MyListingsScreen extends StatelessWidget {
-  const MyListingsScreen({Key? key}) : super(key: key);
+  const MyListingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +51,14 @@ class MyListingsScreen extends StatelessWidget {
                       errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image),
                     ),
                   ),
-                  title: Text('฿${item['price_thb']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green)),
+                  title: Text(
+                    '฿${item['price_thb']}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                  ),
                   subtitle: Text('สภาพ: ${item['condition']}\nลงเมื่อ: ${DateTime.parse(item['created_at']).toLocal().toString().split(' ')[0]}'),
                   isThreeLine: true,
                   trailing: IconButton(

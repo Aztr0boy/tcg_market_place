@@ -6,7 +6,7 @@ import 'add_listing_screen.dart';
 import 'my_listings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +37,7 @@ class ProfileScreen extends StatelessWidget {
         builder: (context, snapshot) {
           
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.orange));
+            return const Center(child: CircularProgressIndicator());
           }
           final data = snapshot.data;
           final fallbackName = user?.email?.split('@')[0] ?? 'Unknown';
@@ -66,7 +66,7 @@ class ProfileScreen extends StatelessWidget {
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AddListingScreen())),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.list_alt_rounded, color: Colors.greenAccent),
+                  leading: const Icon(Icons.list_alt_rounded, color: Color(0xFFC8FF4D)),
                   title: const Text('รายการสินค้าของฉัน'),
                   subtitle: const Text('จัดการสินค้าและลบรายการ', style: TextStyle(color: Colors.grey)),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),

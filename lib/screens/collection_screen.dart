@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class CollectionScreen extends StatelessWidget {
-  const CollectionScreen({Key? key}) : super(key: key);
+  const CollectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +26,9 @@ class CollectionScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.trending_up, color: Colors.greenAccent, size: 20),
+                    Icon(Icons.trending_up, color: Color(0xFFC8FF4D), size: 20),
                     SizedBox(width: 4),
-                    Text('+฿450 (3.2%)', style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text('+฿450 (3.2%)', style: TextStyle(color: Color(0xFFC8FF4D), fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 )
               ],

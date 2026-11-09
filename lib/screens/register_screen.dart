@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({Key? key}) : super(key: key);
+  const RegisterScreen({super.key});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -32,7 +32,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('สมัครสมาชิกสำเร็จ!'), backgroundColor: Colors.green),
+          SnackBar(
+            content: const Text('สมัครสมาชิกสำเร็จ!'),
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          ),
         );
         Navigator.pop(context);
       }

@@ -4,19 +4,28 @@ import 'register_screen.dart';
 import 'transition_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController();
+  final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _loginController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _signIn() async {
-    if (_usernameController.text.isEmpty || _passwordController.text.isEmpty) {
+    final identifier = _loginController.text.trim();
+    final password = _passwordController.text;
+    if (identifier.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('กรุณากรอก Username และ Password'), backgroundColor: Colors.orange),
       );
@@ -25,11 +34,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final username = _usernameController.text.trim();
-      final fakeEmail = "$username@tcgmarket.com"; 
+      final email = identifier.contains('@')
+          ? identifier
+          : '$identifier@tcgmarket.com';
       await Supabase.instance.client.auth.signInWithPassword(
-        email: fakeEmail,
-        password: _passwordController.text.trim(),
+        email: email,
+        password: password,
       );
       if (mounted) {
         Navigator.pushReplacement(
@@ -37,11 +47,22 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (_) => const TransitionScreen()), 
         );
       }
-
-    } catch (e) {
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      final message = error.message.toLowerCase().contains('email not confirmed')
+          ? 'กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ'
+          : error.message.toLowerCase().contains('invalid login credentials')
+              ? 'อีเมล/Username หรือรหัสผ่านไม่ถูกต้อง'
+              : 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่อ';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Username หรือ Password ไม่ถูกต้อง'), backgroundColor: Colors.red),
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('เชื่อมต่อระบบไม่ได้ กรุณาลองอีกครั้ง'), backgroundColor: Colors.red),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -50,7 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0x121212), 
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: SingleChildScrollView( 
           padding: const EdgeInsets.all(32.0),
@@ -60,13 +81,13 @@ class _LoginScreenState extends State<LoginScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2C3E50).withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.style, 
+                  Icons.style_rounded,
                   size: 100,
-                  color: Color(0xFF2C3E50),
+                  color: Color(0xFF32F5FF),
                 ),
               ),
               const SizedBox(height: 24),
@@ -75,19 +96,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2C3E50),
+                  color: Colors.white,
                   letterSpacing: 2,
                 ),
               ),
               const Text(
                 'ศูนย์รวมการ์ดสะสมของคุณ',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.white70),
               ),
               const SizedBox(height: 48),
               TextField(
-                controller: _usernameController,
+                controller: _loginController,
                 decoration: InputDecoration(
-                  labelText: 'Username',
+                  labelText: 'อีเมล หรือ Username บัญชีเดิม',
+                  helperText:
+                      'บัญชีที่สร้างด้วยอีเมล ให้กรอกอีเมลนั้น ไม่ใช่ชื่อ Admin',
                   prefixIcon: const Icon(Icons.person_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -113,16 +136,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _signIn,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2C3E50),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: _isLoading 
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
+                  child: _isLoading
+                    ? CircularProgressIndicator(color: Theme.of(context).colorScheme.onPrimary)
+                    : Text(
                         'เข้าสู่ระบบ', 
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                 ),
               ),
@@ -134,9 +162,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     MaterialPageRoute(builder: (_) => const RegisterScreen()),
                   );
                 },
-                child: const Text(
+                child: Text(
                   'ยังไม่มีบัญชี? สมัครสมาชิกใหม่ที่นี่',
-                  style: TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ],

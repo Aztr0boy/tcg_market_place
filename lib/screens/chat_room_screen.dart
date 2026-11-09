@@ -5,7 +5,7 @@ class ChatRoomScreen extends StatefulWidget {
   final String chatId;
   final Map<String, dynamic> itemData; 
 
-  const ChatRoomScreen({Key? key, required this.chatId, required this.itemData}) : super(key: key);
+  const ChatRoomScreen({super.key, required this.chatId, required this.itemData});
 
   @override
   State<ChatRoomScreen> createState() => _ChatRoomScreenState();
@@ -41,7 +41,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('แชทซื้อขาย', style: TextStyle(fontSize: 16)),
-            Text('การ์ด: ฿${widget.itemData['price_thb']}', style: const TextStyle(fontSize: 12, color: Colors.green)),
+            Text(
+              'การ์ด: ฿${widget.itemData['price_thb']}',
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.tertiary),
+            ),
           ],
         ),
       ),

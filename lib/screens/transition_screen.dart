@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../main.dart'; 
 
 class TransitionScreen extends StatefulWidget {
-  const TransitionScreen({Key? key}) : super(key: key);
+  const TransitionScreen({super.key});
 
   @override
   State<TransitionScreen> createState() => _TransitionScreenState();
@@ -33,7 +33,7 @@ class _TransitionScreenState extends State<TransitionScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.style, size: 100, color: Colors.orange),
+            Icon(Icons.style_rounded, size: 100, color: Color(0xFF32F5FF)),
             SizedBox(height: 24),
             Text(
               'กำลังเตรียมข้อมูล...', 
@@ -45,7 +45,7 @@ class _TransitionScreenState extends State<TransitionScreen> {
               ),
             ),
             SizedBox(height: 40),
-            CircularProgressIndicator(color: Colors.orange),
+            CircularProgressIndicator(color: Color(0xFF32F5FF)),
           ],
         ),
       ),

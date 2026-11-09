@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'card_detail_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +14,7 @@ class HomeScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 200.0,
+            expandedHeight: 218,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
               title: FutureBuilder<Map<String, dynamic>?>(
@@ -40,22 +40,29 @@ class HomeScreen extends StatelessWidget {
               background: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [Color(0xFF2C3E50), Color(0xFF4CA1AF)],
+                    colors: [Color(0xFF071923), Color(0xFF101A2B), Color(0xFF241126)],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                 ),
-                child: Icon(Icons.style,
-                    size: 80, color: Colors.white.withOpacity(0.2)),
+                child: Icon(
+                  Icons.style_rounded,
+                  size: 96,
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.22),
+                ),
               ),
             ),
           ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: const Text(
+              child: Text(
                 'สินค้ามาใหม่ล่าสุด',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ),
           ),
@@ -85,9 +92,9 @@ class HomeScreen extends StatelessWidget {
                 sliver: SliverGrid(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    mainAxisSpacing: 15,
-                    crossAxisSpacing: 15,
-                    childAspectRatio: 0.75,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 0.68,
                   ),
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
@@ -134,8 +141,8 @@ class HomeScreen extends StatelessWidget {
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         color: isSold
-                                            ? Colors.grey
-                                            : Colors.green)),
+                                          ? Theme.of(context).colorScheme.onSurfaceVariant
+                                          : Theme.of(context).colorScheme.tertiary)),
                               ),
                             ],
                           ),

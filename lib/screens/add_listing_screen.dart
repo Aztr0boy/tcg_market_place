@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as p;
 
 class AddListingScreen extends StatefulWidget {
-  const AddListingScreen({Key? key}) : super(key: key);
+  const AddListingScreen({super.key});
   @override
   State<AddListingScreen> createState() => _AddListingScreenState();
 }
@@ -66,7 +66,10 @@ class _AddListingScreenState extends State<AddListingScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ลงขายการ์ดสำเร็จ!'), backgroundColor: Colors.green),
+          SnackBar(
+            content: const Text('ลงขายการ์ดสำเร็จ!'),
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          ),
         );
         Navigator.pop(context); 
       }
@@ -84,7 +87,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('ลงขายการ์ด')),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Colors.orange))
+        ? const Center(child: CircularProgressIndicator())
         : SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -133,7 +136,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
                 const Text('สภาพการ์ด', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _selectedCondition,
+                  initialValue: _selectedCondition,
                   decoration: const InputDecoration(border: OutlineInputBorder()),
                   dropdownColor: const Color(0xFF1E1E1E), 
                   items: _conditions.map((String value) {
@@ -164,8 +167,8 @@ class _AddListingScreenState extends State<AddListingScreen> {
                   child: ElevatedButton(
                     onPressed: _submitListing,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange, 
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       )

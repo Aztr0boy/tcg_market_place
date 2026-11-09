@@ -5,7 +5,7 @@ import 'chat_room_screen.dart';
 class CardDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
 
-  const CardDetailScreen({Key? key, required this.item}) : super(key: key);
+  const CardDetailScreen({super.key, required this.item});
 
   @override
   State<CardDetailScreen> createState() => _CardDetailScreenState();
@@ -89,7 +89,10 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
           
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ลบการ์ดสำเร็จ'), backgroundColor: Colors.green)
+          SnackBar(
+            content: const Text('ลบการ์ดสำเร็จ'),
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          )
         );
         Navigator.pop(context); 
       }
@@ -141,10 +144,17 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('฿${widget.item['price_thb']}', style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green)),
+                      Text(
+                        '฿${widget.item['price_thb']}',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.tertiary,
+                        ),
+                      ),
                       Chip(
                         label: Text(widget.item['condition'] ?? 'ไม่ระบุ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                        backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                         side: BorderSide.none,
                       ),
                     ],
@@ -179,8 +189,12 @@ class _CardDetailScreenState extends State<CardDetailScreen> {
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isMyItem ? Colors.grey[800] : Colors.orange, 
-                foregroundColor: Colors.white,
+                backgroundColor: isMyItem
+                  ? Theme.of(context).colorScheme.surfaceContainerHighest
+                  : Theme.of(context).colorScheme.primary,
+                foregroundColor: isMyItem
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),

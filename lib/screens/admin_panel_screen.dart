@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminPanelScreen extends StatefulWidget {
-  const AdminPanelScreen({Key? key}) : super(key: key);
+  const AdminPanelScreen({super.key});
 
   @override
   State<AdminPanelScreen> createState() => _AdminPanelScreenState();
@@ -50,7 +50,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
       _fetchAdminData(); 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('เปลี่ยนสิทธิ์เป็น $newRole สำเร็จ'), backgroundColor: Colors.green),
+          SnackBar(
+            content: Text('เปลี่ยนสิทธิ์เป็น $newRole สำเร็จ'),
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+          ),
         );
       }
     } catch (e) {
@@ -62,14 +65,21 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text('ยืนยันการ$actionName', style: const TextStyle(color: Colors.white)),
         content: Text('แน่ใจหรือไม่ว่าต้องการ $actionName ผู้ใช้นี้?', style: const TextStyle(color: Colors.white70)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey))),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: isBanned ? Colors.green : Colors.redAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isBanned
+                ? Theme.of(context).colorScheme.tertiary
+                : Theme.of(context).colorScheme.error,
+              foregroundColor: isBanned
+                ? Theme.of(context).colorScheme.onTertiary
+                : Theme.of(context).colorScheme.onError,
+            ),
             child: Text(actionName, style: const TextStyle(color: Colors.white)),
           ),
         ],
@@ -114,17 +124,15 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), 
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('ศูนย์ควบคุม Admin', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: const Color(0xFF1E293B),
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('ศูนย์ควบคุม Admin'),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchAdminData),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.orange))
+          ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _fetchAdminData,
               child: SingleChildScrollView(
@@ -137,11 +145,11 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                     const SizedBox(height: 12),
                     Row(
                       children: [
-                        _buildStatCard('ผู้ใช้ทั้งหมด', _stats['users'] ?? 0, Icons.people, Colors.blue),
+                        _buildStatCard('ผู้ใช้ทั้งหมด', _stats['users'] ?? 0, Icons.people, Theme.of(context).colorScheme.primary),
                         const SizedBox(width: 12),
-                        _buildStatCard('การ์ดที่ลงขาย', _stats['available'] ?? 0, Icons.storefront, Colors.orange),
+                        _buildStatCard('การ์ดที่ลงขาย', _stats['available'] ?? 0, Icons.storefront, Theme.of(context).colorScheme.secondary),
                         const SizedBox(width: 12),
-                        _buildStatCard('ขายออกแล้ว', _stats['sold'] ?? 0, Icons.check_circle, Colors.green),
+                        _buildStatCard('ขายออกแล้ว', _stats['sold'] ?? 0, Icons.check_circle, Theme.of(context).colorScheme.tertiary),
                       ],
                     ),
                     
@@ -162,15 +170,23 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                         final isMe = user['id'] == supabase.auth.currentUser?.id;
 
                         return Card(
-                          color: isBanned ? Colors.red.withValues(alpha: 0.1) : const Color(0xFF1E293B),
+                            color: isBanned
+                              ? Theme.of(context).colorScheme.error.withValues(alpha: 0.1)
+                              : Theme.of(context).colorScheme.surface,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: isBanned ? Colors.redAccent : Colors.transparent),
+                            side: BorderSide(
+                              color: isBanned
+                                  ? Theme.of(context).colorScheme.error
+                                  : Theme.of(context).colorScheme.primary.withValues(alpha: 0.16),
+                            ),
                           ),
                           margin: const EdgeInsets.only(bottom: 8),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: role == 'admin' ? Colors.orange : Colors.blueGrey,
+                                backgroundColor: role == 'admin'
+                                  ? Theme.of(context).colorScheme.secondary
+                                  : Theme.of(context).colorScheme.primary,
                               child: Icon(isBanned ? Icons.block : (role == 'admin' ? Icons.admin_panel_settings : Icons.person), color: Colors.white),
                             ),
                             title: Text(
@@ -181,12 +197,20 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                                 decoration: isBanned ? TextDecoration.lineThrough : null,
                               ),
                             ),
-                            subtitle: Text('Role: ${role.toUpperCase()}', style: TextStyle(color: role == 'admin' ? Colors.orangeAccent : Colors.white54, fontSize: 12)),
+                            subtitle: Text(
+                              'Role: ${role.toUpperCase()}',
+                              style: TextStyle(
+                                color: role == 'admin'
+                                    ? Theme.of(context).colorScheme.secondary
+                                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                                fontSize: 12,
+                              ),
+                            ),
                             trailing: isMe 
                               ? const Chip(label: Text('คุณ', style: TextStyle(fontSize: 10)), backgroundColor: Colors.white12) 
                               : PopupMenuButton<String>(
                                   icon: const Icon(Icons.more_vert, color: Colors.white),
-                                  color: const Color(0xFF334155),
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   onSelected: (value) {
                                     if (value == 'role') _updateRole(user['id'], role);
                                     if (value == 'ban') _toggleBan(user['id'], isBanned);
@@ -198,7 +222,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
                                     ),
                                     PopupMenuItem(
                                       value: 'ban', 
-                                      child: Text(isBanned ? 'ปลดแบน' : 'แบนผู้ใช้', style: TextStyle(color: isBanned ? Colors.green : Colors.redAccent))
+                                      child: Text(
+                                        isBanned ? 'ปลดแบน' : 'แบนผู้ใช้',
+                                        style: TextStyle(
+                                          color: isBanned
+                                              ? Theme.of(context).colorScheme.tertiary
+                                              : Theme.of(context).colorScheme.error,
+                                        ),
+                                      )
                                     ),
                                   ],
                                 ),

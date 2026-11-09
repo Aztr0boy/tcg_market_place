@@ -5,7 +5,7 @@ class ChatScreen extends StatefulWidget {
   final String roomId;
   final String partnerName;
 
-  const ChatScreen({Key? key, required this.roomId, required this.partnerName}) : super(key: key);
+  const ChatScreen({super.key, required this.roomId, required this.partnerName});
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();

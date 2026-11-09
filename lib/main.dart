@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/splash_screen.dart'; 
-import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/market_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/notification_screen.dart';
+import 'screens/ai_feature_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,27 +19,99 @@ Future<void> main() async {
 }
 
 class TcgMarketApp extends StatelessWidget {
-  const TcgMarketApp({Key? key}) : super(key: key);
+  const TcgMarketApp({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: const Color(0xFF32F5FF),
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: const Color(0xFF32F5FF),
+      onPrimary: const Color(0xFF041316),
+      secondary: const Color(0xFFFF4FD8),
+      onSecondary: const Color(0xFF26051F),
+      tertiary: const Color(0xFFC8FF4D),
+      onTertiary: const Color(0xFF172000),
+      surface: const Color(0xFF0F1721),
+      surfaceContainerHighest: const Color(0xFF182431),
+      outlineVariant: const Color(0xFF29404C),
+    );
+
     return MaterialApp(
       title: 'TCG Market',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        brightness: Brightness.dark, 
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: const Color(0xFF121212), 
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E1E1E), 
-          foregroundColor: Colors.white,
+        colorScheme: colorScheme,
+        scaffoldBackgroundColor: const Color(0xFF080D14),
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF080D14),
+          foregroundColor: colorScheme.onSurface,
+          centerTitle: false,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          titleTextStyle: TextStyle(
+            color: colorScheme.onSurface,
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-        cardColor: const Color(0xFF1E1E1E),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Color(0xFF1E1E1E),
-          selectedItemColor: Colors.orange, 
-          unselectedItemColor: Colors.grey,
+        cardTheme: CardThemeData(
+          color: colorScheme.surface,
+          elevation: 3,
+          shadowColor: colorScheme.primary.withValues(alpha: 0.12),
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: colorScheme.primary.withValues(alpha: 0.2)),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.72),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.outlineVariant.withValues(alpha: 0.7)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: colorScheme.primary, width: 1.7),
+          ),
+        ),
+        progressIndicatorTheme: ProgressIndicatorThemeData(
+          color: colorScheme.primary,
+          linearTrackColor: colorScheme.primary.withValues(alpha: 0.18),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size.fromHeight(50),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+        ),
+        navigationBarTheme: NavigationBarThemeData(
+          height: 72,
+          backgroundColor: const Color(0xFF0B121B),
+          indicatorColor: colorScheme.primary.withValues(alpha: 0.16),
+          labelTextStyle: const WidgetStatePropertyAll(
+            TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+        ),
+        floatingActionButtonTheme: FloatingActionButtonThemeData(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: colorScheme.surfaceContainerHighest,
+          contentTextStyle: TextStyle(color: colorScheme.onSurface),
         ),
       ),
       home: const SplashScreen(),
@@ -47,7 +119,7 @@ class TcgMarketApp extends StatelessWidget {
   }
 }
 class MainLayout extends StatefulWidget {
-  const MainLayout({Key? key}) : super(key: key);
+  const MainLayout({super.key});
   @override
   State<MainLayout> createState() => _MainLayoutState();
 }
@@ -58,7 +130,7 @@ class _MainLayoutState extends State<MainLayout> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const MarketScreen(),
-    const Center(child: Text('จัดเด็ค (รออัปเดต)')), 
+    const AiFeatureScreen(),
     const ProfileScreen(),
   ];
 
@@ -82,7 +154,7 @@ class _MainLayoutState extends State<MainLayout> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               behavior: SnackBarBehavior.floating,
-              backgroundColor: Colors.blueGrey[900],
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               content: Text('${latestNotif['title']}\n${latestNotif['message']}'),
               action: SnackBarAction(
                 label: 'ดู', 
@@ -106,7 +178,7 @@ class _MainLayoutState extends State<MainLayout> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'หน้าแรก'),
           NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'ตลาด'),
-          NavigationDestination(icon: Icon(Icons.style_outlined), selectedIcon: Icon(Icons.style), label: 'จัดเด็ค'),
+          NavigationDestination(icon: Icon(Icons.auto_awesome_outlined), selectedIcon: Icon(Icons.auto_awesome), label: 'AI TCG'),
           NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'โปรไฟล์'),
         ],
       ),

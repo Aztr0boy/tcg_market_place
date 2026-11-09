@@ -4,7 +4,7 @@ import '../main.dart'; // import เพื่อให้เรียกใช�
 import 'login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -43,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.style, size: 100, color: Colors.orange), 
+            Icon(Icons.style_rounded, size: 100, color: Color(0xFF32F5FF)),
             SizedBox(height: 24),
             Text(
               'TCG MARKET',
@@ -55,7 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             SizedBox(height: 40),
-            CircularProgressIndicator(color: Colors.orange), 
+            CircularProgressIndicator(color: Color(0xFF32F5FF)),
           ],
         ),
       ),
