@@ -21,7 +21,7 @@ Deno.serve(async (request: Request) => {
   const authorization = request.headers.get("Authorization");
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const openAiKey = Deno.env.get("OPENAI_API_KEY");
+  const geminiKey = Deno.env.get("GEMINI_API_KEY");
   if (!authorization || !supabaseUrl || !anonKey) {
     return jsonResponse({ error: "Sign in to use the AI assistant" }, 401);
   }
@@ -34,8 +34,8 @@ Deno.serve(async (request: Request) => {
       return jsonResponse({ error: "Your session is invalid or expired" }, 401);
     }
 
-    if (!openAiKey) {
-      return jsonResponse({ error: "AI is not configured. Set OPENAI_API_KEY in Supabase secrets." }, 503);
+    if (!geminiKey) {
+      return jsonResponse({ error: "AI is not configured. Set GEMINI_API_KEY in Supabase secrets." }, 503);
     }
 
     const body = await request.json();
@@ -64,32 +64,69 @@ Deno.serve(async (request: Request) => {
       "Keep the response structured and concise. Label uncertainty clearly; AI output is an explanation, not an official judge ruling.",
     ].join("\n");
 
-    const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openAiKey}`,
-        "Content-Type": "application/json",
+    const geminiBody = JSON.stringify({
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: "user", parts: [{ text: JSON.stringify({ prompt, cards }) }] }],
+      generationConfig: {
+        maxOutputTokens: 450,
+        thinkingConfig: { thinkingLevel: "LOW" },
       },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.2,
-        max_tokens: 900,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: JSON.stringify({ prompt, cards }) },
-        ],
-      }),
     });
+    const requestGemini = (model: string) =>
+      fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: {
+            "x-goog-api-key": geminiKey,
+            "Content-Type": "application/json",
+          },
+          body: geminiBody,
+        },
+      );
+    let model = "gemini-3.5-flash-lite";
+    let aiResponse = await requestGemini(model);
+    if (aiResponse.status === 503) {
+      await aiResponse.body?.cancel();
+      model = "gemini-3.6-flash";
+      console.warn("Gemini Flash-Lite unavailable; falling back to", model);
+      aiResponse = await requestGemini(model);
+    }
+    for (let retry = 0; retry < 2 && aiResponse.status >= 500; retry++) {
+      await aiResponse.body?.cancel();
+      const backoffMs = 500 * 2 ** retry + Math.floor(Math.random() * 250);
+      console.warn("Gemini request failed; retrying", aiResponse.status, retry + 1);
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      aiResponse = await requestGemini(model);
+    }
 
     if (!aiResponse.ok) {
-      console.error("OpenAI request failed", aiResponse.status);
-      return jsonResponse({ error: "AI service is temporarily unavailable" }, 502);
+      console.error("Gemini request failed", aiResponse.status);
+      if (aiResponse.status === 429) {
+        return jsonResponse(
+          { error: "Gemini quota or rate limit exceeded. Check Google AI Studio usage and billing." },
+          429,
+        );
+      }
+      if (aiResponse.status === 401 || aiResponse.status === 403) {
+        return jsonResponse(
+          { error: "Gemini API key is invalid or Gemini API access is not enabled." },
+          502,
+        );
+      }
+      return jsonResponse(
+        { error: `Gemini request failed with HTTP ${aiResponse.status}` },
+        502,
+      );
     }
 
     const result = await aiResponse.json();
-    const answer = result.choices?.[0]?.message?.content;
+    const answer = result.candidates?.[0]?.content?.parts
+      ?.map((part: { text?: unknown }) => typeof part.text === "string" ? part.text : "")
+      .join("")
+      .trim();
     if (typeof answer !== "string" || !answer.trim()) {
-      return jsonResponse({ error: "AI returned an empty answer" }, 502);
+      return jsonResponse({ error: "Gemini returned an empty answer" }, 502);
     }
     return jsonResponse({ answer: answer.trim() });
   } catch (error) {

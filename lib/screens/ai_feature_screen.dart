@@ -62,6 +62,7 @@ class _CardResearchTabState extends State<_CardResearchTab> {
   String _game = _tcgGames.first;
   String? _error;
   String? _answer;
+  String? _aiError;
   bool _searching = false;
   bool _asking = false;
 
@@ -119,17 +120,18 @@ class _CardResearchTabState extends State<_CardResearchTab> {
     setState(() {
       _asking = true;
       _answer = null;
+      _aiError = null;
     });
     try {
       final answer = await AiAssistantService.ask(
         mode: 'research',
         game: _game,
         prompt: question,
-        cards: _results.take(6).toList(),
+        cards: _results.take(3).toList(),
       );
       if (mounted) setState(() => _answer = answer);
     } catch (error) {
-      if (mounted) _showMessage(_friendlyError(error));
+      if (mounted) setState(() => _aiError = _friendlyError(error));
     } finally {
       if (mounted) setState(() => _asking = false);
     }
@@ -256,7 +258,7 @@ class _CardResearchTabState extends State<_CardResearchTab> {
               : const Icon(Icons.auto_awesome),
           label: const Text('ค้นคว้าด้วย AI'),
         ),
-        if (_answer != null) _AnswerPanel(answer: _answer!),
+        _AnswerPanel(answer: _answer, error: _aiError, isLoading: _asking),
       ],
     );
   }
@@ -274,6 +276,7 @@ class _RulingTabState extends State<_RulingTab> {
   final _contextController = TextEditingController();
   String _game = _tcgGames.first;
   String? _answer;
+  String? _aiError;
   bool _asking = false;
 
   @override
@@ -292,6 +295,7 @@ class _RulingTabState extends State<_RulingTab> {
     setState(() {
       _asking = true;
       _answer = null;
+      _aiError = null;
     });
     try {
       final contextText = _contextController.text.trim();
@@ -305,7 +309,7 @@ class _RulingTabState extends State<_RulingTab> {
       );
       if (mounted) setState(() => _answer = answer);
     } catch (error) {
-      if (mounted) _showMessage(_friendlyError(error));
+      if (mounted) setState(() => _aiError = _friendlyError(error));
     } finally {
       if (mounted) setState(() => _asking = false);
     }
@@ -370,25 +374,49 @@ class _RulingTabState extends State<_RulingTab> {
               : const Icon(Icons.gavel_outlined),
           label: const Text('อธิบาย Ruling'),
         ),
-        if (_answer != null) _AnswerPanel(answer: _answer!),
+        _AnswerPanel(answer: _answer, error: _aiError, isLoading: _asking),
       ],
     );
   }
 }
 
 class _AnswerPanel extends StatelessWidget {
-  const _AnswerPanel({required this.answer});
+  const _AnswerPanel({
+    required this.answer,
+    required this.error,
+    required this.isLoading,
+  });
 
-  final String answer;
+  final String? answer;
+  final String? error;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: SelectableText(answer),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('คำตอบจาก AI', style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              if (isLoading) ...[
+                const LinearProgressIndicator(),
+                const SizedBox(height: 8),
+                const Text('กำลังรอคำตอบ...'),
+              ] else if (error != null) ...[
+                Text(error!, style: TextStyle(color: theme.colorScheme.error)),
+              ] else if (answer != null) ...[
+                SelectableText(answer!),
+              ] else ...[
+                const Text('คำตอบจะแสดงที่นี่หลังจากส่งคำถาม'),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -397,8 +425,8 @@ class _AnswerPanel extends StatelessWidget {
 
 String _friendlyError(Object error) {
   final message = error.toString().replaceFirst('Exception: ', '');
-  if (message.contains('OPENAI_API_KEY') || message.contains('AI is not configured')) {
-    return 'AI ยังไม่พร้อมใช้งาน: ตั้งค่า OPENAI_API_KEY และ deploy Supabase Function ก่อน';
+  if (message.contains('GEMINI_API_KEY') || message.contains('AI is not configured')) {
+    return 'AI ยังไม่พร้อมใช้งาน: ตั้งค่า GEMINI_API_KEY และ deploy Supabase Function ก่อน';
   }
   if (message.contains('invalid or expired') || message.contains('Sign in')) {
     return 'เซสชันหมดอายุ กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่';
