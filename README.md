@@ -14,3 +14,10 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## Deploy to Vercel
+
+Import this GitHub repository as a new Vercel project and keep the repository
+root as the project root. Vercel uses `vercel.json` to install Flutter 3.50.0,
+build the Flutter Web app, and publish `build/web`. The rewrite keeps
+client-side routes working when opened directly.
